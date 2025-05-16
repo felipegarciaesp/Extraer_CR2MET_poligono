@@ -75,6 +75,8 @@ plot(shp.shp, add = T)
 
 # Aca quede. COntinuar el lunes 19 de mayo.
 # Recuerda que tu quieres un raster en donde cada pixel muestre la pp max anual.
+# Entonces antes debes hacer el paso de obtener la Pp max para cada año. Esa linea
+# de codigo debes hacerla.
 # Entonces tu vas a querer tantos raster como años de analisis tengas.
 # El .nc de CR2MET que has cargado tiene data desde 01-1979 hasta 04-2020, por lo
 # tanto, debes tener un raster por cada año entre 1979 y 2019: 41 raster.
