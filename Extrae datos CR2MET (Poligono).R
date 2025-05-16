@@ -38,6 +38,48 @@ plot(nc_ras[[1]])# PAUSA....# En casos de ser necesario reflejar o transponer se
 #plot(flip_nc_ras[[1]])#Continuando con el ejercicio...# Seleccionar archivos con extensi?n ".shp". Luego eliminar la extensi?n de los strings.
 shapes <- list.files(path = dir_cuencas, pattern = glob2rx("*.shp"))
 shapes <- gsub(".shp", "", shapes)
+
+# Se  carga el archivo shape en R. Se utiliza "st_read" y as(shp.shp, "Spatial")
+# que corresponden al paquete sf. Este paquete reemplaza a rgdal, que se
+# encuentra discontinuado.
+shp.shp <- st_read(dsn = paste0(dir_cuencas, shapes, ".shp"))
+shp.shp <- as(shp.shp, "Spatial")
+projection(shp.shp) <- SRC_shp
+plot(shp.shp, add = TRUE)
+
+# Se extrae el nombre del poligono cargado y se definen los limites del mismo:
+nombre_shape <- shapes
+ext <- extent(shp.shp)
+ext@xmin <- ext@xmin - 0.1
+ext@xmax <- ext@xmax + 0.1
+ext@ymin <- ext@ymin - 0.1
+ext@ymax <- ext@ymax + 0.1
+
+# Extraemos la data del .nc solo para la extension del poligono.
+nc_ras_crop <- crop(nc_ras, ext)
+
+# Se grafica la data extraida para el primer elemento del .nc junto
+# con el poligono. Esto a modo de verificacion.
+plot(nc_ras_crop[[1]])
+plot(shp.shp, add = T)
+
+# Desagregar para disminuir el tamaño de pixeles y ajustar el raster de mejor 
+# forma al contorno del poligono.
+# En las siguientes lineas se ajustan los datos del .nc al contorno del poligono.
+nc_ras_crop <- disaggregate(nc_ras_crop, fact = 10, method = "bilinear" )
+plot(nc_ras_crop[[1]])
+plot(shp.shp, add = T)# Aplicar máscara (.shp de HRU). Plot de verificación.
+nc_ras_crop_mask <- mask(nc_ras_crop, shp.shp)
+plot(nc_ras_crop_mask[[1]])
+plot(shp.shp, add = T)
+
+# Aca quede. COntinuar el lunes 19 de mayo.
+# Recuerda que tu quieres un raster en donde cada pixel muestre la pp max anual.
+# Entonces tu vas a querer tantos raster como años de analisis tengas.
+# El .nc de CR2MET que has cargado tiene data desde 01-1979 hasta 04-2020, por lo
+# tanto, debes tener un raster por cada año entre 1979 y 2019: 41 raster.
+# Pero como te dijo Eduardo, trabaja con los ultimos 30 años de analisis solamente.
+
 ## Acotar NetCDF a .shp de HRU, desagregar pixeles y calcular promedio por paso de tiempo. Exportar resultados. ####
 for (a in 1:length(shapes)){# Cargar .shp
         shp.shp <- st_read(dsn = paste0(dir_cuencas, shapes[a], ".shp"))
