@@ -6,22 +6,26 @@ rm(list=ls())#Instalamos los paquetes
 #install.packages("raster")
 #install.packages("ncdf4")
 #install.packages("rgdal")
-#install.packages("dplyr")# Cargar los paquetes
+#install.packages("dplyr")
+#install.packages("sf")# Cargar los paquetes
+#install.packages("terra")
 library("raster")
 library("ncdf4")
-library("rgdal")
+#library("rgdal")
+library("sf")
+library("terra")
 library("dplyr")## Definir Directorios, nombre del NetCDF y variable a extraer ####
-setwd("C:/Users/dark_/Desktop/Tarea 1 EPA Modelacion hidrologica de cuenca/R") # Carpeta donde se imprimir?n los Resultados
-dir_nc ="X:/Utiles SIG/Datos Grillados/CR2MET/" # Carpeta donde se encuentra el archivo .nc
-dir_cuencas = "C:/Users/dark_/Desktop/Tarea 1 EPA Modelacion hidrologica de cuenca/R" # Recuerde que si es usuario de Linux no debe cerrar la ruta con el "/" final
-netcdf="CR2MET_tmax_v2.0_mon_1979_2019_005deg.nc" # Nombre del archivo netcdf a procesar
-var <- "tmax" # Variable a extraer. Dependiendo del NetCDF, puede ser Baseflow, Runoff, pr, t2m, ff, rh.
+setwd("C:/Users/felipe.garcia/Codigos/Extrae_datos_CR2MET_Poligono") #Carpeta donde se imprimiran los resultados.
+dir_nc ="C:/Users/felipe.garcia/Codigos/Extrae_datos_CR2MET_Poligono/CR2MET/" # Carpeta donde se encuentra el archivo .nc
+dir_cuencas = "C:/Users/felipe.garcia/Codigos/Extrae_datos_CR2MET_Poligono/Cuenca/" # Recuerde que si es usuario de Linux no debe cerrar la ruta con el "/" final
+netcdf="CR2MET_pr_v2.0_day_1979_2020_005deg.nc" # Nombre del archivo netcdf a procesar
+var <- "pr" # Variable a extraer. Dependiendo del NetCDF, puede ser Baseflow, Runoff, pr, t2m, ff, rh.
 SRC <- "+proj=longlat +datum=WGS84 +no_defs" # Asignar sistema de referencia de coordenadas usado al momento de guardar los shapes del practico asincronico
 SRC_shp <- "+proj=longlat +datum=WGS84 +no_defs"##"+proj=utm +zone=19 +south +datum=WGS84 +units=m +no_defs"
 ## Abrir NetCDF y obtener vector de tiempo
 nc <- nc_open(paste0(dir_nc,netcdf))# Obtener vectores de tiempo.
 time <- ncvar_get(nc, varid = "time")# Definici?n Vector fecha.
-fecha<-seq(as.Date("1979-01-01"), length=(length(time)), by="month")## Conversi?n de NetCDF a Raster ##### Transformar NetCDF a Raster. Plot de verificacion.
+fecha<-seq(as.Date("1979-01-01"), length=(length(time)), by="day")## Conversi?n de NetCDF a Raster ##### Transformar NetCDF a Raster. Plot de verificacion.
 nc_ras <- stack(paste0(dir_nc, netcdf), varname = var)# Plot de verificaci?n (puede necesitar modificaciones: reflejar o trasponer).
 plot(nc_ras[[1]])# PAUSA....# En casos de ser necesario reflejar o transponer se deben usar las funciones flip() y t() respectivamente.
 # Con los datos del presente ejercicio no es necesario ejecutar estas operaci?nes, pero para conocer
@@ -36,7 +40,8 @@ shapes <- list.files(path = dir_cuencas, pattern = glob2rx("*.shp"))
 shapes <- gsub(".shp", "", shapes)
 ## Acotar NetCDF a .shp de HRU, desagregar pixeles y calcular promedio por paso de tiempo. Exportar resultados. ####
 for (a in 1:length(shapes)){# Cargar .shp
-        shp.shp <- readOGR(dsn = dir_cuencas, layer = shapes[a])
+        shp.shp <- st_read(dsn = paste0(dir_cuencas, shapes[a], ".shp"))
+        shp.shp <- as(shp.shp, "Spatial")
         projection(shp.shp) <- SRC_shp # Indicar el sistema de referencia de coordenadas den archivo shp.shp
         #shp.shp<-spTransform(shp.shp, SRC) #shift(shp.shp,dx=360,dy=0)
         plot(shp.shp, add = TRUE)
