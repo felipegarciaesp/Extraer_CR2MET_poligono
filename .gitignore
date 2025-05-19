@@ -1,3 +1,6 @@
 CR2MET/
 Cuenca/
 Resultados/
+Proceso_QGIS/
+*.RData
+*.Rhistory
