@@ -58,6 +58,8 @@ for (a in 1:length(shapes)) {
   ext@ymax <- ext@ymax + 0.1
   
   # Recortar y enmascarar raster
+  # Se desagrega para disminuir el tamaño de pixeles y ajustar el raster de 
+  # mejor forma al contorno del shape.
   nc_crop <- crop(nc_ras, ext)
   nc_crop <- disaggregate(nc_crop, fact = 10, method = "bilinear")
   nc_mask <- mask(nc_crop, shp)
