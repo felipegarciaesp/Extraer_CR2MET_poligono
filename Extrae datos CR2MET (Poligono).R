@@ -42,10 +42,10 @@ shapes <- gsub(".shp", "", shapes)
 # Se  carga el archivo shape en R. Se utiliza "st_read" y as(shp.shp, "Spatial")
 # que corresponden al paquete sf. Este paquete reemplaza a rgdal, que se
 # encuentra discontinuado.
-shp.shp <- st_read(dsn = paste0(dir_cuencas, shapes, ".shp"))
-shp.shp <- as(shp.shp, "Spatial")
-projection(shp.shp) <- SRC_shp
-plot(shp.shp, add = TRUE)
+shp <- st_read(paste0(dir_cuencas, shapes, ".shp"))
+shp <- as(shp, "Spatial")
+projection(shp) <- SRC_shp
+plot(shp, add = TRUE)
 
 # Se extrae el nombre del poligono cargado y se definen los limites del mismo:
 nombre_shape <- shapes
@@ -54,6 +54,24 @@ ext@xmin <- ext@xmin - 0.1
 ext@xmax <- ext@xmax + 0.1
 ext@ymin <- ext@ymin - 0.1
 ext@ymax <- ext@ymax + 0.1
+
+
+# Recortar y enmascarar raster
+nc_crop <- crop(nc_ras, ext)
+nc_crop <- disaggregate(nc_crop, fact = 10, method = "bilinear")
+nc_mask <- mask(nc_crop, shp)
+
+#Calcular precipitacion maxima anual por pixel
+years <- unique(format(fecha, "%Y"))
+for (yr in years) {
+  idx <- which(format(fecha, "%Y") == yr)
+  raster_anual <- calc(nc_mask[[idx]], fun = max, na.rm = TRUE)
+  writeRaster(raster_anual,
+              filename = paste0(shapes, "_max_pr_", yr, ".tif"),
+              format = "GTiff",
+              overwrite = TRUE)
+}
+
 
 # Extraemos la data del .nc solo para la extension del poligono.
 nc_ras_crop <- crop(nc_ras, ext)
@@ -73,14 +91,7 @@ nc_ras_crop_mask <- mask(nc_ras_crop, shp.shp)
 plot(nc_ras_crop_mask[[1]])
 plot(shp.shp, add = T)
 
-# Aca quede. COntinuar el lunes 19 de mayo.
-# Recuerda que tu quieres un raster en donde cada pixel muestre la pp max anual.
-# Entonces antes debes hacer el paso de obtener la Pp max para cada año. Esa linea
-# de codigo debes hacerla.
-# Entonces tu vas a querer tantos raster como años de analisis tengas.
-# El .nc de CR2MET que has cargado tiene data desde 01-1979 hasta 04-2020, por lo
-# tanto, debes tener un raster por cada año entre 1979 y 2019: 41 raster.
-# Pero como te dijo Eduardo, trabaja con los ultimos 30 años de analisis solamente.
+
 
 ## Acotar NetCDF a .shp de HRU, desagregar pixeles y calcular promedio por paso de tiempo. Exportar resultados. ####
 for (a in 1:length(shapes)){# Cargar .shp
